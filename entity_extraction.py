@@ -6,8 +6,8 @@ import pickle
 
 # global variables
 input_doc_sor_pickle_file = 'target/pickled_doc_sor.pkl'
-output_doc_sor_pickle_file = 'target/updated_doc_sor_entities'
-ocr_docs_path = '/Users/verlynfischer/enron_entity_data/OcrData'
+# ocr_docs_path = '/Users/verlynfischer/enron_entity_data/OcrData' # Local box
+ocr_docs_path = '/home/fischer/OcrData' # AI Lab box
 
 # Google connection
 entity_client = language_v1.LanguageServiceClient.from_service_account_json(
@@ -103,11 +103,15 @@ def main():
             document.entity_list = analyzeEntitySentiment(text_content)
 
         # For periodically writing the results to a file (and early stopping)
-        if document_index % 25 == 0:
-            filePath = f'output_doc_sor_pickle_file_{document_index}.pkl'
+        if document_index % 1000 == 0:
+            filePath = f'target/enriched_doc_sor_pickle_file_{document_index}.pkl'
             with open(filePath,'wb') as f:
                 pickle.dump(document_list,f)
-            break
+
+    # Writing final file
+    filePath = f'target/enriched_doc_sor_pickle_file_final.pkl'
+    with open(filePath, 'wb') as f:
+        pickle.dump(document_list, f)
 
     print('Processing Complete')
 

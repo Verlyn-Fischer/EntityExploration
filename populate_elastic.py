@@ -2,7 +2,7 @@ import pickle
 import requests
 import json
 
-updated_doc_sor_entities_file = 'target/updated_doc_sor_entities_1.pkl'
+updated_doc_sor_entities_file = 'target/enriched_doc_sor_pickle_file_final.pkl'
 
 class docStructure:
 
@@ -98,6 +98,7 @@ def writeToElastic(message):
     }
 
     response = requests.post('http://10.10.138.98:9200/enron-entities/_doc', headers=headers, data=message)
+    print(f'Response from Elastic: {response}')
 
 def main():
 
@@ -181,8 +182,5 @@ def main():
         for flat in flat_list:
             message = prepareJSON(flat)
             writeToElastic(message)
-
-        if document_index > 1:
-            break
 
 main()
