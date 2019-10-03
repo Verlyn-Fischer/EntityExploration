@@ -1,13 +1,35 @@
 from google.cloud import language_v1
 from google.cloud.language_v1 import enums
 import mysql.connector as conn
+import json_tricks
+import pickle
+import logging
+import boto3
+from botocore.exceptions import ClientError
+import os
+from google.cloud import storage
+
 
 # Connections
-s3_source = ''
+
+# S3
+s3_bucket_name = 'csdisco-devteam'
+s3_path = 'environments/automation/storage/1ad3e6aa59f248ab8f8e466983b3de31'
+
+# DocSOR
 cnx = []
-google_client = language_v1.LanguageServiceClient.from_service_account_json(
+
+# Google
+entity_client = language_v1.LanguageServiceClient.from_service_account_json(
     "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json")
+
+# storage_client = storage.client.Client.from_service_account_json(
+#     "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json")
+
+
+# Elastic
 elastic_client = ''
+
 
 # global variables
 
@@ -60,7 +82,13 @@ class entityStructure:
         self.salience = ''
         self.sentimentScore = ''
         self.sentimentMagnitude = ''
+        self.meta_list = []
 
+class metaStructure:
+
+    def __init__(self):
+        self.metaName = ''
+        self.metaValue = ''
 
 #####################################################################################################################
 #
@@ -75,14 +103,27 @@ class entityStructure:
 #### Parsing Functions ###
 ##########################
 
-def getFromName(emailField):
-    return ''
-
-def getFromAddress(emailField):
-    return ''
-
-def buildToList(emailField):
-    return ''
+def processEmail(document,emailParticipants):
+    # parts = '[{"DisplayName": "Lands\' End Shipping", "EmailAddress": "customerrequest@lesn.rsc02.com", "Role": 1}, {"DisplayName": "brapp@enron.com", "EmailAddress": "brapp@enron.com", "Role": 2}]'
+    parts_list = json_tricks.loads(emailParticipants)
+    for item in parts_list:
+        foundToList = False
+        if "Role" in item:
+            if item["Role"] == 1:
+                if "DisplayName" in item:
+                    document.email_from_name = item["DisplayName"]
+                if "EmailAddress" in item:
+                    document.email_from_address = item["EmailAddress"]
+            elif item["Role"] == 2 or item["Role"] == 3:
+                toItem = recipientStructure()
+                if "DisplayName" in item:
+                    toItem.email_to_name = item["DisplayName"]
+                    foundToList = True
+                if "EmailAddress" in item:
+                    toItem.email_to_address = item["EmailAddress"]
+                    foundToList = True
+                if foundToList:
+                    document.to_list.append(toItem)
 
 #### MySQL Calls ###
 ####################
@@ -128,9 +169,7 @@ def readFromDocInstances():
 
         documentObject.TextLength = document[0]
         documentObject.docID = document[1]
-        documentObject.email_from_name = getFromName(document[2])
-        documentObject.emal_from_address = getFromAddress(document[2])
-        documentObject.to_list = buildToList(document[2])
+        processEmail(documentObject,document[2])
         documentObject.author = document[3]
         documentObject.custodian = document[4]
         documentObject.hash = document[5]
@@ -144,7 +183,7 @@ def readFromDocInstances():
 ######################
 
 def analyzeEntities(text_content):
-    global google_client
+    global entity_client
 
     entity_list = []
 
@@ -152,7 +191,7 @@ def analyzeEntities(text_content):
     language = "en"
     document = {"content": text_content, "type": type_, "language": language}
     encoding_type = enums.EncodingType.UTF8
-    response = google_client.analyze_entity_sentiment(document, encoding_type=encoding_type)
+    response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type)
 
     for entity in response.entities:
         entityObject = entityStructure()
@@ -164,6 +203,45 @@ def analyzeEntities(text_content):
         entityObject.mentionCount = len(entity.mentions)
         entity_list.append(entityObject)
 
+    return entity_list
+
+def analyzeEntitySentiment(gcs_ocr_content_uri):
+    global entity_client
+
+    entity_list = []
+
+    with open('sources/enron_A11A.txt','r') as f:
+        text_content = f.read()
+
+
+    type_ = enums.Document.Type.PLAIN_TEXT
+    # language = "en"
+    # document = {"gcs_content_uri": gcs_ocr_content_uri, "type": type_, "language": language}
+    # document = {"gcs_content_uri": gcs_ocr_content_uri, "type": type_}
+    document = {"content": text_content, "type": type_}
+    encoding_type = enums.EncodingType.UTF8
+
+    try:
+        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type)
+
+        for entity in response.entities:
+            entityObject = entityStructure()
+            entityObject.entityName = entity.name
+            entityObject.entityType = enums.Entity.Type(entity.type).name
+            entityObject.salience = entity.salience
+            entityObject.sentimentScore = entity.sentiment.score
+            entityObject.sentimentMagnitude = entity.sentiment.magnitude
+            entityObject.mentionCount = len(entity.mentions)
+
+            for metadata_name, metadata_value in entity.metadata.items():
+                metaObj = metaStructure()
+                metaObj.metaName = metadata_name
+                metaObj.metaValue = metadata_value
+                entityObject.meta_list.append(metaObj)
+
+            entity_list.append(entityObject)
+    except:
+        pass
     return entity_list
 
 #### Elastic Preparation ####
@@ -196,12 +274,24 @@ def buildEntry(field,value,terminal):
     else:
         return '"' + field + '":"' + value + '"\n'
 
-def main():
+
+#############################################
+#
+# MAIN FUNCTIONS
+#
+#############################################
+
+def main_getEntities():
 
     global document_list
 
     # Query DocSOR
-    readFromDocInstances()
+    # readFromDocInstances()
+
+    # For testing purposes
+    doc = docStructure()
+    doc.hash = '0001CDE05D50FABD1B8FDBD62D96F01D86E4A11A'
+    document_list.append(doc)
 
     document_index = 0
     for document in document_list:
@@ -209,24 +299,37 @@ def main():
         document_index += 1
         print(f'Document Processing: {document_index}')
 
-        # Get file from S3
-        text_content = 'foo'
+        # Direct Google to Extract Text from associated document in Google Bucket
+        # User OCR Bucket only
 
-        # Hit Google with content
-        document.entity_list = analyzeEntities(text_content)
+        google_ocr_bucket = 'enron-entities-ocr-data'
+        ocr_path = 'environments/automation/storage/1ad3e6aa59f248ab8f8e466983b3de31/OcrData/'
+        ocr_document_path = ocr_path + document.hash[0:4] + '/' + document.hash + '.txt'
+        gcs_ocr_content_uri = 'gs://' + google_ocr_bucket + '/' + ocr_document_path
+        print(gcs_ocr_content_uri)
 
-        # Add sentiment into documents
+        # Testing with a file known to exist
+        # gcs_ocr_content_uri = "gs://enron-entities-ocr-data/environments/automation/storage/1ad3e6aa59f248ab8f8e466983b3de31/OcrData/0000/000007289DAA6419E1BDC917570F865BB5A09A46.txt"
 
-        # Prepare for write to Elastic
-        # Mux across documents to prepare messages!!!
-        flatDocument = flatDocStructure()
-        message = prepareJSON(flatDocument)
+        document.entity_list = analyzeEntitySentiment(gcs_ocr_content_uri)
 
-        # Write to Elastic
+        # For exiting the loop while testing
+        if document_index > 0:
+            filePath = 'pickled_docList_' + str(document_index) + '.pkl'
+            with open(filePath,'wb') as f:
+                pickle.dump(document_list,f)
+            break
 
+def main_placeInElastic():
+    print()
+    # Prepare for write to Elastic
+    # Mux across documents to prepare messages!!!
+    # flatDocument = flatDocStructure()
+    # message = prepareJSON(flatDocument)
+    # Write to Elastic
 
-
-main()
+main_getEntities()
+# main_placeInElastic()
 
 ############################################
 # SCRAP
