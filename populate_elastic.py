@@ -149,7 +149,7 @@ def main():
         document_list = []
         document_index = 0
 
-        starting_doc = 12342
+        starting_doc = 0
 
         for dirpath, dirnames, filenames in os.walk(source_directory):
             for file in filenames:
