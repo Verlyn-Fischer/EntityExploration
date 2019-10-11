@@ -10,8 +10,11 @@ input_doc_sor_pickle_file = 'target/pickled_doc_sor.pkl'
 ocr_docs_path = '/home/fischer/OcrData' # AI Lab box
 
 # Google connection
+# entity_client = language_v1.LanguageServiceClient.from_service_account_json(
+#     "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json") # Local
+
 entity_client = language_v1.LanguageServiceClient.from_service_account_json(
-    "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json")
+    "/home/fischer/EntityTest-15e051c291e5.json") # AI Lab
 
 class docStructure:
 
@@ -89,29 +92,39 @@ def main():
 
     print('Pickle File Loaded')
 
+    batch_list = []
+
     document_index = 0
+    batch_index = 0
+    sub_doc_index = 0
+
     for document in document_list:
 
         document_index += 1
-        print(f'Document Processing: {document_index}')
+        batch_list.append(document)
 
-        sourceTextPath = f'{ocr_docs_path}/{document.hash[0:4]}/{document.hash}.txt'
+        if document_index % 1000 == 0 or document_index == len(document_list):
+            batch_index += 1
+            for batchDoc in batch_list:
+                sub_doc_index += 1
+                print(f'Processing Batch: {batch_index}   Batch Doc: {sub_doc_index}')
 
-        if os.path.isfile(sourceTextPath):
-            with open(sourceTextPath, 'r') as f:
-                text_content = f.read()
-            document.entity_list = analyzeEntitySentiment(text_content)
+                sourceTextPath = f'{ocr_docs_path}/{batchDoc.hash[0:4]}/{batchDoc.hash}.txt'
 
-        # For periodically writing the results to a file (and early stopping)
-        if document_index % 1000 == 0:
-            filePath = f'target/enriched_doc_sor_pickle_file_{document_index}.pkl'
+                if os.path.isfile(sourceTextPath):
+                    with open(sourceTextPath, 'r') as f:
+                        text_content = f.read()
+                    batchDoc.entity_list = analyzeEntitySentiment(text_content)
+
+            filePath = f'output/enriched_doc_sor_pickle_file_{batch_index}.pkl'
             with open(filePath,'wb') as f:
-                pickle.dump(document_list,f)
+                pickle.dump(batch_list,f)
+            print(f'Wrote Pickle File for Batch: {batch_index}')
+            print()
 
-    # Writing final file
-    filePath = f'target/enriched_doc_sor_pickle_file_final.pkl'
-    with open(filePath, 'wb') as f:
-        pickle.dump(document_list, f)
+            batch_list.clear()
+            sub_doc_index = 0
+
 
     print('Processing Complete')
 
