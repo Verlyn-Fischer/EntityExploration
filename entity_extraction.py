@@ -2,7 +2,7 @@ from google.cloud import language_v1
 from google.cloud.language_v1 import enums
 import os
 import pickle
-import google.cloud.exceptions as exceptions
+from google.api_core import exceptions
 
 
 # global variables
@@ -64,7 +64,8 @@ def analyzeEntitySentiment(text_content):
 
 
     try:
-        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type,timeout=30)
+        #response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type, timeout=30.0, retry=None)
+        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type, timeout=30.0)
 
         for entity in response.entities:
             entityObject = entityStructure()
@@ -84,16 +85,28 @@ def analyzeEntitySentiment(text_content):
             entity_list.append(entityObject)
 
     except exceptions.GatewayTimeout:
-        output_note = response
+        output_note = 'GatewayTimeout'
         pass
+    except exceptions.DeadlineExceeded:
+        output_note = 'DeadlineExceeded'
     except:
-        pass
+        output_note = 'Unknown exception'
 
     return entity_list, output_note
 
 def main():
 
     global input_doc_sor_pickle_file
+
+    # fn="/home/fischer/OcrData/170F/170F76668CBC42AACF0FAFFAC27FB50264404D05.txt"
+    # #fn="/home/fischer/OcrData/D7EF/D7EF9F9C3DA0A625E34ADECE9E8825A1B7951040.txt"
+    # with open(fn, 'rb') as f:
+    #     text_content = f.read().decode('utf-8', 'ignore')[:30000]
+    #     print(text_content)
+    #     print(text_content.encode("utf-8", 'ignore'))
+    # exit(0)
+
+
 
     with open(input_doc_sor_pickle_file, 'rb') as f:
         document_list = pickle.load(f)
@@ -118,17 +131,19 @@ def main():
             if document_index % 1000 == 0 or document_index == len(document_list):
                 batch_index += 1
                 for batchDoc in batch_list:
+                    text_content = ''
                     response = 'Source Text File Not Found'
                     sub_doc_index += 1
 
                     sourceTextPath = f'{ocr_docs_path}/{batchDoc.hash[0:4]}/{batchDoc.hash}.txt'
 
                     if os.path.isfile(sourceTextPath):
-                        with open(sourceTextPath, 'r') as f:
-                            text_content = f.read()
-                        batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode('utf-8'))
+                        with open(sourceTextPath, 'rb') as f:
+                            text_content = f.read().decode('utf-8', 'ignore')[:30000]
 
-                    print(f'Processed Batch: {batch_index}   Batch Doc: {sub_doc_index}  Response: {response}')
+                        batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode("utf-8", 'ignore'))
+
+                    print(f'Processed Batch: {batch_index} Batch Doc: {sub_doc_index} {sourceTextPath} TL: {len(text_content)} Response: {response} EL: {len(batchDoc.entity_list)}')
 
                 filePath = f'output/enriched_doc_sor_pickle_file_{batch_index}.pkl'
                 with open(filePath,'wb') as f:
