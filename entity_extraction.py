@@ -2,6 +2,7 @@ from google.cloud import language_v1
 from google.cloud.language_v1 import enums
 import os
 import pickle
+import google.cloud.exceptions as exceptions
 
 
 # global variables
@@ -55,13 +56,15 @@ def analyzeEntitySentiment(text_content):
     global entity_client
 
     entity_list = []
+    output_note = 'Nada'
 
     type_ = enums.Document.Type.PLAIN_TEXT
     document = {"content": text_content, "type": type_}
     encoding_type = enums.EncodingType.UTF8
 
+
     try:
-        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type)
+        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type,timeout=30)
 
         for entity in response.entities:
             entityObject = entityStructure()
@@ -79,9 +82,14 @@ def analyzeEntitySentiment(text_content):
                 entityObject.meta_list.append(metaObj)
 
             entity_list.append(entityObject)
+
+    except exceptions.GatewayTimeout:
+        output_note = response
+        pass
     except:
         pass
-    return entity_list
+
+    return entity_list, output_note
 
 def main():
 
@@ -95,35 +103,41 @@ def main():
     batch_list = []
 
     document_index = 0
-    batch_index = 0
+    batch_index = 125
     sub_doc_index = 0
+    starting_doc = (batch_index + 1) * 1000 + 1
 
     for document in document_list:
 
         document_index += 1
-        batch_list.append(document)
 
-        if document_index % 1000 == 0 or document_index == len(document_list):
-            batch_index += 1
-            for batchDoc in batch_list:
-                sub_doc_index += 1
-                print(f'Processing Batch: {batch_index}   Batch Doc: {sub_doc_index}')
+        if document_index >= starting_doc:
 
-                sourceTextPath = f'{ocr_docs_path}/{batchDoc.hash[0:4]}/{batchDoc.hash}.txt'
+            batch_list.append(document)
 
-                if os.path.isfile(sourceTextPath):
-                    with open(sourceTextPath, 'r') as f:
-                        text_content = f.read()
-                    batchDoc.entity_list = analyzeEntitySentiment(text_content)
+            if document_index % 1000 == 0 or document_index == len(document_list):
+                batch_index += 1
+                for batchDoc in batch_list:
+                    response = 'Source Text File Not Found'
+                    sub_doc_index += 1
 
-            filePath = f'output/enriched_doc_sor_pickle_file_{batch_index}.pkl'
-            with open(filePath,'wb') as f:
-                pickle.dump(batch_list,f)
-            print(f'Wrote Pickle File for Batch: {batch_index}')
-            print()
+                    sourceTextPath = f'{ocr_docs_path}/{batchDoc.hash[0:4]}/{batchDoc.hash}.txt'
 
-            batch_list.clear()
-            sub_doc_index = 0
+                    if os.path.isfile(sourceTextPath):
+                        with open(sourceTextPath, 'r') as f:
+                            text_content = f.read()
+                        batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode('utf-8'))
+
+                    print(f'Processed Batch: {batch_index}   Batch Doc: {sub_doc_index}  Response: {response}')
+
+                filePath = f'output/enriched_doc_sor_pickle_file_{batch_index}.pkl'
+                with open(filePath,'wb') as f:
+                    pickle.dump(batch_list,f)
+                print(f'Wrote Pickle File for Batch: {batch_index}')
+                print()
+
+                batch_list.clear()
+                sub_doc_index = 0
 
 
     print('Processing Complete')
