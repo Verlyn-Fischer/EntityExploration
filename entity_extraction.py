@@ -64,8 +64,8 @@ def analyzeEntitySentiment(text_content):
 
 
     try:
-        #response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type, timeout=30.0, retry=None)
-        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type, timeout=30.0)
+        response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type, timeout=30.0, retry=None)
+        # response = entity_client.analyze_entity_sentiment(document, encoding_type=encoding_type, timeout=30.0)
 
         for entity in response.entities:
             entityObject = entityStructure()
@@ -105,8 +105,6 @@ def main():
     #     print(text_content)
     #     print(text_content.encode("utf-8", 'ignore'))
     # exit(0)
-
-
 
     with open(input_doc_sor_pickle_file, 'rb') as f:
         document_list = pickle.load(f)
