@@ -8,14 +8,15 @@ from google.api_core import exceptions
 # global variables
 input_doc_sor_pickle_file = 'target/pickled_doc_sor.pkl'
 # ocr_docs_path = '/Users/verlynfischer/enron_entity_data/OcrData' # Local box
-ocr_docs_path = '/home/fischer/OcrData' # AI Lab box
+ocr_docs_path = 'sources' # Local box Test Case
+#ocr_docs_path = '/home/fischer/OcrData' # AI Lab box
 
 # Google connection
-# entity_client = language_v1.LanguageServiceClient.from_service_account_json(
-#     "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json") # Local
-
 entity_client = language_v1.LanguageServiceClient.from_service_account_json(
-    "/home/fischer/EntityTest-15e051c291e5.json") # AI Lab
+     "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json") # Local
+
+#entity_client = language_v1.LanguageServiceClient.from_service_account_json(
+# "/home/fischer/EntityTest-15e051c291e5.json") # AI Lab
 
 class docStructure:
 
@@ -139,7 +140,8 @@ def main():
                         with open(sourceTextPath, 'rb') as f:
                             text_content = f.read().decode('utf-8', 'ignore')[:30000]
 
-                        batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode("utf-8", 'ignore'))
+                        #batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode("utf-8", 'ignore'))
+                        batchDoc.entity_list, response = analyzeEntitySentiment(text_content)
 
                     print(f'Processed Batch: {batch_index} Batch Doc: {sub_doc_index} {sourceTextPath} TL: {len(text_content)} Response: {response} EL: {len(batchDoc.entity_list)}')
 
