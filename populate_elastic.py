@@ -58,64 +58,83 @@ class metaStructure:
         self.metaName = ''
         self.metaValue = ''
 
-def prepareJSON(document):
-
-    # output_json = 'POST /enron-entities/_doc\n'
-    output_json = '{\n'
-    output_json = output_json + buildEntry('DocID',document.docID,False)
-    output_json = output_json + buildEntry('author',document.author,False)
-    output_json = output_json + buildEntry('custodian', document.custodian, False)
-    output_json = output_json + buildEntry('hash', document.hash, False)
-    output_json = output_json + buildEntry('email-from-displayname', document.email_from_name, False)
-    output_json = output_json + buildEntry('email-from-address', document.email_from_address, False)
-    output_json = output_json + buildEntry('entity-name', document.entityName, False)
-    output_json = output_json + buildEntry('entity-type', document.entityType, False)
-    output_json = output_json + buildEntry('mentions', document.mentionCount, False)
-    output_json = output_json + buildEntry('salience', document.salience, False)
-    output_json = output_json + buildEntry('entity-sentiment-score', document.sentimentScore, False)
-    output_json = output_json + buildEntry('entity-sentiment-magnitude', document.sentimentMagnitude, False)
-    output_json = output_json + buildEntry('email-to-displayname', document.email_to_name, False)
-    output_json = output_json + buildEntry('email-to-address', document.email_to_address, True)
-    output_json = output_json + '}\n'
-
-    return output_json
+# def prepareJSON(document):
+#
+#     # output_json = 'POST /enron-entities/_doc\n'
+#     output_json = '{\n'
+#     output_json = output_json + buildEntry('DocID',document.docID,False)
+#     output_json = output_json + buildEntry('author',document.author,False)
+#     output_json = output_json + buildEntry('custodian', document.custodian, False)
+#     output_json = output_json + buildEntry('hash', document.hash, False)
+#     output_json = output_json + buildEntry('email-from-displayname', document.email_from_name, False)
+#     output_json = output_json + buildEntry('email-from-address', document.email_from_address, False)
+#     output_json = output_json + buildEntry('entity-name', document.entityName, False)
+#     output_json = output_json + buildEntry('entity-type', document.entityType, False)
+#     output_json = output_json + buildEntry('mentions', document.mentionCount, False)
+#     output_json = output_json + buildEntry('salience', document.salience, False)
+#     output_json = output_json + buildEntry('entity-sentiment-score', document.sentimentScore, False)
+#     output_json = output_json + buildEntry('entity-sentiment-magnitude', document.sentimentMagnitude, False)
+#     output_json = output_json + buildEntry('email-to-displayname', document.email_to_name, False)
+#     output_json = output_json + buildEntry('email-to-address', document.email_to_address, True)
+#     output_json = output_json + '}\n'
+#
+#     return output_json
 
 def prepareBulkJSON(document):
 
-    # output_json = 'POST /enron-entities/_doc\n'
-    output_json = '{'
-    output_json = output_json + buildBulkEntry('DocID',document.docID,False)
-    output_json = output_json + buildBulkEntry('author',document.author,False)
-    output_json = output_json + buildBulkEntry('custodian', document.custodian, False)
-    output_json = output_json + buildBulkEntry('hash', document.hash, False)
-    output_json = output_json + buildBulkEntry('email-from-displayname', document.email_from_name, False)
-    output_json = output_json + buildBulkEntry('email-from-address', document.email_from_address, False)
-    output_json = output_json + buildBulkEntry('entity-name', document.entityName, False)
-    output_json = output_json + buildBulkEntry('entity-type', document.entityType, False)
-    output_json = output_json + buildBulkEntry('mentions', document.mentionCount, False)
-    output_json = output_json + buildBulkEntry('salience', document.salience, False)
-    output_json = output_json + buildBulkEntry('entity-sentiment-score', document.sentimentScore, False)
-    output_json = output_json + buildBulkEntry('entity-sentiment-magnitude', document.sentimentMagnitude, False)
-    output_json = output_json + buildBulkEntry('email-to-displayname', document.email_to_name, False)
-    output_json = output_json + buildBulkEntry('email-to-address', document.email_to_address, True)
-    output_json = output_json + '}'
+    output = {'DocID': document.docID, 'author': document.author, 'custodian': document.custodian,
+         'hash': document.hash, 'email-from-displayname': document.email_from_name,
+         'email-from-address': document.email_from_address, 'entity-name': document.entityName,
+         'entity-type': document.entityType, 'mentions': document.mentionCount, 'salience': document.salience,
+         'entity-sentiment-score': document.sentimentScore, 'entity-sentiment-magnitude': document.sentimentMagnitude,
+         'email-to-displayname': document.email_to_name, 'email-to-address': document.email_to_address}
+
+    # # output_json = 'POST /enron-entities/_doc\n'
+    # output_json = '{'
+    # output_json = output_json + buildBulkEntry('DocID',document.docID,False)
+    # output_json = output_json + buildBulkEntry('author',document.author,False)
+    # output_json = output_json + buildBulkEntry('custodian', document.custodian, False)
+    # output_json = output_json + buildBulkEntry('hash', document.hash, False)
+    # output_json = output_json + buildBulkEntry('email-from-displayname', document.email_from_name, False)
+    # output_json = output_json + buildBulkEntry('email-from-address', document.email_from_address, False)
+    # output_json = output_json + buildBulkEntry('entity-name', document.entityName, False)
+    # output_json = output_json + buildBulkEntry('entity-type', document.entityType, False)
+    # output_json = output_json + buildBulkEntry('mentions', document.mentionCount, False)
+    # output_json = output_json + buildBulkEntry('salience', document.salience, False)
+    # output_json = output_json + buildBulkEntry('entity-sentiment-score', document.sentimentScore, False)
+    # output_json = output_json + buildBulkEntry('entity-sentiment-magnitude', document.sentimentMagnitude, False)
+    # output_json = output_json + buildBulkEntry('email-to-displayname', document.email_to_name, False)
+    # output_json = output_json + buildBulkEntry('email-to-address', document.email_to_address, True)
+    # output_json = output_json + '}'
+
+    output_json = json.dumps(output)
 
     return output_json
 
-def buildEntry(field,value,terminal):
-    if value != None:
-        if not terminal:
-            return '"' + field + '":"' + str(value) + '",\n'
-        else:
-            return '"' + field + '":"' + str(value) + '"\n'
-    else:
-        if not terminal:
-            return '"' + field + '":"' + '' + '",\n'
-        else:
-            return '"' + field + '":"' + '' + '"\n'
+# def buildEntry(field,value,terminal):
+#     if value != None:
+#         if not terminal:
+#             return '"' + field + '":"' + str(value) + '",\n'
+#         else:
+#             return '"' + field + '":"' + str(value) + '"\n'
+#     else:
+#         if not terminal:
+#             return '"' + field + '":"' + '' + '",\n'
+#         else:
+#             return '"' + field + '":"' + '' + '"\n'
+
 
 def buildBulkEntry(field,value,terminal):
     if value != None:
+
+        # old = r'\\'
+        # new = r'\\\\'
+        #
+        # if not terminal:
+        #     return '"' + field + '":"' + str(value).replace(old,new) + '",'
+        # else:
+        #     return '"' + field + '":"' + str(value).replace(old,new) + '"'
+
         if not terminal:
             return '"' + field + '":"' + str(value) + '",'
         else:
@@ -126,7 +145,7 @@ def buildBulkEntry(field,value,terminal):
         else:
             return '"' + field + '":"' + '' + '"'
 
-def writeToElastic(message, document_index, flat_index, session):
+def writeToElastic(message, document_index, flat_index, session, docID):
 
     # headers = {
     #     'Content-Type': 'application/x-ndjson',
@@ -140,7 +159,14 @@ def writeToElastic(message, document_index, flat_index, session):
     # response = session.post('http://10.10.138.98:9200/enron-entities/_doc', headers=headers, data=message)
     # response = requests.post('http://10.10.138.98:9200/enron-entities/_doc', headers=headers, data=message)
 
-    print(f'Document: {document_index}   Message Count: {flat_index}   Response: {response}')
+    error = True
+    try:
+        outJson = json.loads(response.text)
+        error = outJson["errors"]
+    except:
+        pass
+
+    print(f'Document Index: {document_index}  DocID: {docID}   Message Count: {flat_index}   Response: {response}   Error: {error} ')
 
 def main():
 
@@ -240,6 +266,6 @@ def main():
                                 flat_message = prepareBulkJSON(flat)
                                 message = message + flat_message + '\n'
                             message = message + '\n'
-                            # writeToElastic(message, document_index, flat_index, session)
+                            writeToElastic(message, document_index, flat_index, session, document.docID)
 
 main()
