@@ -12,11 +12,11 @@ input_doc_sor_pickle_file = 'target/pickled_doc_sor.pkl'
 ocr_docs_path = '/home/fischer/OcrData' # AI Lab box
 
 # Google connection
-entity_client = language_v1.LanguageServiceClient.from_service_account_json(
-    "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json") # Local
-
 # entity_client = language_v1.LanguageServiceClient.from_service_account_json(
-#     "/home/fischer/EntityTest-15e051c291e5.json") # AI Lab
+#     "/Users/verlynfischer/GoogleProjectKeys/EntityTest-15e051c291e5.json") # Local
+
+entity_client = language_v1.LanguageServiceClient.from_service_account_json(
+    "/home/fischer/EntityTest-15e051c291e5.json") # AI Lab
 
 class docStructure:
 
@@ -129,43 +129,38 @@ def main():
 
         document_index += 1
 
-        if document.docID == "Docs/152972":
-            print('Found Doc')
+        if document_index >= starting_doc and document_index <= ending_doc:
+
+            batch_list.append(document)
+
+            if document_index % 1000 == 0 or document_index == len(document_list):
+                batch_index += 1
+                for batchDoc in batch_list:
+                    text_content = ''
+                    response = 'Source Text File Not Found'
+                    sub_doc_index += 1
+
+                    sourceTextPath = f'{ocr_docs_path}/{batchDoc.hash[0:4]}/{batchDoc.hash}.txt'
+
+                    if os.path.isfile(sourceTextPath):
+                        with open(sourceTextPath, 'r', encoding="latin-1") as f:
+                            #text_content = f.read()[:30000]
+                            text_content = f.read()
+
+                        batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode("utf-8"))
+
+                    print(f'Processed Batch: {batch_index} Batch Doc: {sub_doc_index} {sourceTextPath} TL: {len(text_content)} Response: {response} EL: {len(batchDoc.entity_list)}')
+
+                filePath = f'output/enriched_doc_sor_pickle_file_{batch_index}.pkl'
+                with open(filePath,'wb') as f:
+                    pickle.dump(batch_list,f)
+                print(f'Wrote Pickle File for Batch: {batch_index}')
+                print()
+
+                batch_list.clear()
+                sub_doc_index = 0
 
 
-    #
-    #     if document_index >= starting_doc and document_index <= ending_doc:
-    #
-    #         batch_list.append(document)
-    #
-    #         if document_index % 1000 == 0 or document_index == len(document_list):
-    #             batch_index += 1
-    #             for batchDoc in batch_list:
-    #                 text_content = ''
-    #                 response = 'Source Text File Not Found'
-    #                 sub_doc_index += 1
-    #
-    #                 sourceTextPath = f'{ocr_docs_path}/{batchDoc.hash[0:4]}/{batchDoc.hash}.txt'
-    #
-    #                 if os.path.isfile(sourceTextPath):
-    #                     with open(sourceTextPath, 'r', encoding="latin-1") as f:
-    #                         #text_content = f.read()[:30000]
-    #                         text_content = f.read()
-    #
-    #                     # batchDoc.entity_list, response = analyzeEntitySentiment(text_content.encode("utf-8"))
-    #
-    #                 print(f'Processed Batch: {batch_index} Batch Doc: {sub_doc_index} {sourceTextPath} TL: {len(text_content)} Response: {response} EL: {len(batchDoc.entity_list)}')
-    #
-    #             filePath = f'output/enriched_doc_sor_pickle_file_{batch_index}.pkl'
-    #             with open(filePath,'wb') as f:
-    #                 pickle.dump(batch_list,f)
-    #             print(f'Wrote Pickle File for Batch: {batch_index}')
-    #             print()
-    #
-    #             batch_list.clear()
-    #             sub_doc_index = 0
-    #
-    #
-    # print('Processing Complete')
+    print('Processing Complete')
 
 main()
