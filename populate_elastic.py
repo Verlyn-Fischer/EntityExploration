@@ -266,6 +266,6 @@ def main():
                                 flat_message = prepareBulkJSON(flat)
                                 message = message + flat_message + '\n'
                             message = message + '\n'
-                            writeToElastic(message, document_index, flat_index, session, document.docID)
+                            # writeToElastic(message, document_index, flat_index, session, document.docID)
 
 main()
