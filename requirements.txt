@@ -26,7 +26,7 @@ googleapis-common-protos==1.6.0
 grpcio==1.23.0
 idna==2.8
 jmespath==0.9.4
-joblib==0.13.2
+joblib==1.2.0
 json-tricks==3.13.1
 jsonschema==3.0.0a3
 kiwisolver==1.1.0
